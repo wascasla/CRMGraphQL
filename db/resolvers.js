@@ -15,10 +15,36 @@ const crearToken = (usuario, secreta, expiresIn) => {
 // Resolvers
 const resolvers = {
     Query: {
+        //Usuarios
         obtenerUsuario: async(_, { token }) => {
             const usuarioId = await jwt.verify(token, process.env.SECRETA);
 
             return usuarioId
+        },
+        //Productos
+        obtenerProductos: async() => {
+           try {
+            const productos = Producto.find();
+
+            return productos;
+           } catch (error) {
+               console.log(error);
+           }
+        },
+        obtenerProducto: async (_, { id }) => {
+            try {
+                // revisar si el producto existe o no
+                const producto = await Producto.findById(id);
+
+                if(!producto){
+                    throw new Error('Producto no encontrado');
+                }
+
+                return producto;
+    
+            } catch (error) {   
+                throw new Error('Producto no encontrado');
+            }
         }
     },
     Mutation: {
@@ -81,7 +107,38 @@ const resolvers = {
             } catch (error) {
                 console.log(error);
             }
+        },
+        
+        actualizarProducto: async (_, {id, input}) => {
+            // revisar si el producto existe o no
+            let producto = await Producto.findById(id);
+
+            if(!producto){
+                throw new Error('Producto no encontrado');
+            }
+
+            // guardarlo en la BD
+            producto = await Producto.findByIdAndUpdate({ _id : id }, input, { new: true});
+
+            return producto;
+        },
+
+        eliminarProducto: async (_, {id}) => {
+            // revisar si el producto existe o no
+            let producto = await Producto.findById(id);
+
+            if(!producto){
+                throw new Error('Producto no encontrado');
+            }
+
+            // Eliminar
+            await Producto.findByIdAndDelete({_id : id});
+
+            return "Producto Eliminado";
+
         }
+
+        
 
     }
 
