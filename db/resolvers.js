@@ -111,6 +111,12 @@ const resolvers = {
 
             // retornar el resultado
             return pedido;
+        },
+
+        obtenerPedidosEstado: async (_, {estado}, ctx) => {
+            const pedidos = await Pedido.find({ vendedor: ctx.usuario.id, estado});
+
+            return pedidos;
         }
     },
     Mutation: {
@@ -349,6 +355,23 @@ const resolvers = {
             // guardar el pedido
             const resultado = await Pedido.findByIdAndUpdate({ _id: id }, input, { new: true });
             return resultado;
+        },
+
+        eliminarPedido: async (_, {id}, ctx) => {
+            //verificar si existe o no
+            const pedido = await Pedido.findById(id);
+            if(!pedido) {
+                throw new Error('No existe el pedido');
+            }
+
+            // verificar si pertenece al vendedor
+            if(pedido.vendedor.toString() !== ctx.usuario.id){
+                throw new Error('No tienes las credenciales');
+            }
+
+            //eliminar pedido
+            await Pedido.findOneAndDelete({_id : id});
+            return 'Pedido eliminado';
         }
 
 
