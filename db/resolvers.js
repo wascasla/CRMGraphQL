@@ -18,10 +18,8 @@ const crearToken = (usuario, secreta, expiresIn) => {
 const resolvers = {
     Query: {
         //Usuarios
-        obtenerUsuario: async (_, { token }) => {
-            const usuarioId = await jwt.verify(token, process.env.SECRETA);
-
-            return usuarioId
+        obtenerUsuario: async (_, { }, ctx) => {
+            return ctx.usuario;
         },
         //Productos
         obtenerProductos: async () => {
@@ -113,19 +111,21 @@ const resolvers = {
             return pedido;
         },
 
-        obtenerPedidosEstado: async (_, {estado}, ctx) => {
-            const pedidos = await Pedido.find({ vendedor: ctx.usuario.id, estado});
+        obtenerPedidosEstado: async (_, { estado }, ctx) => {
+            const pedidos = await Pedido.find({ vendedor: ctx.usuario.id, estado });
 
             return pedidos;
         },
 
         mejoresClientes: async () => {
             const clientes = await Pedido.aggregate([
-                { $match : { estado : "COMPLETADO"} },
-                { $group : {
-                    _id : "$cliente",
-                    total: { $sum: '$total' }
-                }},
+                { $match: { estado: "COMPLETADO" } },
+                {
+                    $group: {
+                        _id: "$cliente",
+                        total: { $sum: '$total' }
+                    }
+                },
                 {
                     $lookup: {
                         from: 'clientes',
@@ -135,7 +135,7 @@ const resolvers = {
                     }
                 },
                 {
-                    $sort : { total : -1 }
+                    $sort: { total: -1 }
                 }
             ]);
 
@@ -144,11 +144,13 @@ const resolvers = {
 
         mejoresVendedores: async () => {
             const vendedores = await Pedido.aggregate([
-                { $match : { estado: "COMPLETADO"} },
-                { $group : {
-                    _id : "$vendedor",
-                    total: { $sum: 'total'}
-                }},
+                { $match: { estado: "COMPLETADO" } },
+                {
+                    $group: {
+                        _id: "$vendedor",
+                        total: { $sum: 'total' }
+                    }
+                },
                 {
                     $lookup: {
                         from: 'usuarios',
@@ -161,7 +163,7 @@ const resolvers = {
                     $limit: 3
                 },
                 {
-                    $sort: { total : -1 }
+                    $sort: { total: -1 }
                 }
             ]);
 
@@ -169,7 +171,7 @@ const resolvers = {
         },
 
         buscarProducto: async (_, { texto }) => {
-            const productos = await Producto.find({ $text: { $search: texto}}).limit(10);
+            const productos = await Producto.find({ $text: { $search: texto } }).limit(10);
 
             return productos;
         }
@@ -412,20 +414,20 @@ const resolvers = {
             return resultado;
         },
 
-        eliminarPedido: async (_, {id}, ctx) => {
+        eliminarPedido: async (_, { id }, ctx) => {
             //verificar si existe o no
             const pedido = await Pedido.findById(id);
-            if(!pedido) {
+            if (!pedido) {
                 throw new Error('No existe el pedido');
             }
 
             // verificar si pertenece al vendedor
-            if(pedido.vendedor.toString() !== ctx.usuario.id){
+            if (pedido.vendedor.toString() !== ctx.usuario.id) {
                 throw new Error('No tienes las credenciales');
             }
 
             //eliminar pedido
-            await Pedido.findOneAndDelete({_id : id});
+            await Pedido.findOneAndDelete({ _id: id });
             return 'Pedido eliminado';
         }
 
